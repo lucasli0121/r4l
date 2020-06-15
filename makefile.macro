@@ -1,0 +1,18 @@
+
+MAKE=make
+CC=g++ -frtti -fPIC
+LD=g++ -frtti -fPIC
+RM=rm
+AR=ar
+DEBUG= -g
+OUT_PATH=.
+SRC_PATH=.
+LIB_PATH=./obj
+FFMPEG=/usr/local/ffmpeg
+X264=/usr/local/x264
+PARAM= -c $(DEBUG) -fpermissive -Wdeprecated-declarations
+CFLAG= -I$(FFMPEG)/include -I/usr/include -I./inc -I$(FFMPEG)/include -I$(X264)/include 
+LDFLAG=-L/usr/local/lib -L$(FFMPEG)/lib -L$(X264)/lib -L../bin -L/usr/lib/x86_64-linux-gnu \
+	-lavcodec -lavutil -lswscale -lavformat -lswresample -lavdevice -lx264 -lX11 -lpthread
+
+EXTRA_LIBS= -lc -lpthread
