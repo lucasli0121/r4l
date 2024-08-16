@@ -1,16 +1,18 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "x64",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/local/ffmpeg/include",
-                "/usr/local/x264/include",
-                "../mymedia/inc",
-                "../mylibs/inc"
+                "c:\\msys64\\usr\\include",
+                "c:\\msys64\\mingw64\\include",
+                "c:\\msys64\\mingw64\\include\\c++\\13.2.0",
+                "c:\\msys64\\mingw64\\include\\c++\\13.2.0\\x86_64-w64-mingw32",
+                "c:\\msys64\\usr\\local\\ffmpeg\\include",
+                "c:\\msys64\\usr\\local\\x264\\include"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "compilerPath": "c:\\msys64\\usr\\bin\\clang",
             "cStandard": "c11",
             "cppStandard": "c++14",
             "intelliSenseMode": "clang-x64"

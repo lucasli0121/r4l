@@ -14,6 +14,7 @@ extern "C" {
 #include "libavformat/avformat.h"
 #include "libavutil/opt.h"
 #include "libavdevice/avdevice.h"
+#include "libavutil/imgutils.h"
 }
 
 unsigned int width = 800;
@@ -23,10 +24,11 @@ static pthread_t thrId;
 static void* handleStreamThreadFunc(void*);
 
 static AVFormatContext * avFmtCtx = NULL;
+static AVCodecParameters * avCodecParams = NULL;
 static AVCodecContext * avRawCodecCtx = NULL;
 static AVCodecContext * avEncoderCtx;
 static AVDictionary * avRawOptions = NULL;
-static AVCodec * avDecodec = NULL;
+
 static AVCodec * avEncodec = NULL;
 static struct SwsContext *swsCtx = NULL;
 static AVPacket * avRawPkt = NULL;
@@ -36,12 +38,11 @@ static AVFrame *avYUVFrame = NULL;
 int main(int argc, char** argv)
 {
     
-
-    av_register_all();
 	avdevice_register_all();
     
     avFmtCtx = avformat_alloc_context();
     avRawPkt = (AVPacket *) malloc(sizeof(AVPacket));
+#ifdef __X11__
     char *displayName = getenv("DISPLAY");
     Display * display = XOpenDisplay(displayName);
     int screenNum = DefaultScreen(display);
@@ -57,10 +58,11 @@ int main(int argc, char** argv)
     char val[255];
     sprintf(val, "%d*%d", width, height);
     av_dict_set(&avRawOptions,"video_size", val, 0);
+#endif
     av_dict_set(&avRawOptions,"framerate", "15", 0);
     
-    
-    AVInputFormat *avInputFmt = av_find_input_format("x11grab");
+#ifdef __X11__    
+    const AVInputFormat *avInputFmt = av_find_input_format("x11grab");
     if (avInputFmt == NULL)  {
         printf("av_find_input_format not found......\n");
         return 0;
@@ -70,13 +72,24 @@ int main(int argc, char** argv)
         printf("Couldn't open input stream.\n");
         return 0;
     }
+#else
+    const AVInputFormat *avInputFmt = av_find_input_format("gdigrab");
+    if (avInputFmt == NULL)  {
+        printf("av_find_input_format not found......\n");
+        return 0;
+    }
+    if(avformat_open_input(&avFmtCtx, "desktop", avInputFmt, &avRawOptions) !=0 ) {
+        printf("Couldn't open input stream.\n");
+        return 0;
+    }
+#endif
     if (avformat_find_stream_info(avFmtCtx, &avRawOptions) < 0) {
         printf("Couldn't find stream information.\n");
         return 0;
     }
 	
 	for (int i=0; i < avFmtCtx->nb_streams; ++i) {
-        if (avFmtCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO) {
+        if (avFmtCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             videoIndex = i;
             break;
         }
@@ -87,8 +100,10 @@ int main(int argc, char** argv)
         return 0;
     }
     
-    avRawCodecCtx = avFmtCtx->streams[videoIndex]->codec;
-    avDecodec = avcodec_find_decoder(avRawCodecCtx->codec_id);
+    avCodecParams = avFmtCtx->streams[videoIndex]->codecpar;
+    avRawCodecCtx = avcodec_alloc_context3(NULL);
+    avcodec_parameters_to_context(avRawCodecCtx, avCodecParams);
+    const AVCodec * avDecodec = avcodec_find_decoder(avRawCodecCtx->codec_id);
     if (avDecodec == NULL) {
         printf("Codec not found.\n");
         return 0;
@@ -106,12 +121,11 @@ int main(int argc, char** argv)
         AV_PIX_FMT_YUV420P,
         SWS_BICUBIC, NULL, NULL, NULL);
 
-    
-
-    
     avYUVFrame = av_frame_alloc();
-    int yuvLen = avpicture_get_size(AV_PIX_FMT_YUV420P, avRawCodecCtx->width, avRawCodecCtx->height);
+    
+    int yuvLen = av_image_get_buffer_size(AV_PIX_FMT_YUV420P, avRawCodecCtx->width, avRawCodecCtx->height, 1);
     uint8_t *yuvBuf = new uint8_t[yuvLen];
+    av_image_fill_arrays(avYUVFrame->data, avYUVFrame->linesize, yuvBuf, AV_PIX_FMT_YUV420P, avRawCodecCtx->width, avRawCodecCtx->height, 1);
     avpicture_fill((AVPicture *)avYUVFrame, (uint8_t *)yuvBuf, AV_PIX_FMT_YUV420P, avRawCodecCtx->width, avRawCodecCtx->height); 
 
     avYUVFrame->width = avRawCodecCtx->width;

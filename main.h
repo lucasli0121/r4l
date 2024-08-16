@@ -1,3 +1,10 @@
+/******************************************************************************
+ * Author: liguoqiang
+ * Date: 2024-08-14 13:25:54
+ * LastEditors: liguoqiang
+ * LastEditTime: 2024-08-15 23:15:54
+ * Description: 
+********************************************************************************/
 /*
  * @Author: liguoqiang
  * @Date: 2020-06-11 11:10:41
@@ -13,10 +20,13 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <linux/fb.h>
 #include <sys/mman.h>
 #include <string.h>
+
+#ifdef __X11__
 #include <X11/Xlib.h>
+#endif
+
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
